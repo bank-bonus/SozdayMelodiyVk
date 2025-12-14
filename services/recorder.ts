@@ -144,10 +144,9 @@ class RecorderService {
       tracks: this.tracks
     };
     
-    const existing = localStorage.getItem('vk_music_songs');
-    const songs: Song[] = existing ? JSON.parse(existing) : [];
-    songs.push(song);
-    localStorage.setItem('vk_music_songs', JSON.stringify(songs));
+    const existing = this.getSavedSongs();
+    existing.push(song);
+    localStorage.setItem('vk_music_songs', JSON.stringify(existing));
     return song;
   }
 
@@ -178,22 +177,36 @@ class RecorderService {
   }
 
   public getSavedSongs(): Song[] {
-    const existing = localStorage.getItem('vk_music_songs');
-    return existing ? JSON.parse(existing) : [];
+    try {
+        const existing = localStorage.getItem('vk_music_songs');
+        return existing ? JSON.parse(existing) : [];
+    } catch(e) {
+        console.error("Failed to parse saved songs", e);
+        return [];
+    }
   }
 
   public deleteSong(id: string) {
     const existing = localStorage.getItem('vk_music_songs');
     if (!existing) return;
-    const songs: Song[] = JSON.parse(existing);
-    const newSongs = songs.filter(s => s.id !== id);
-    localStorage.setItem('vk_music_songs', JSON.stringify(newSongs));
-    this.notify();
+    try {
+        const songs: Song[] = JSON.parse(existing);
+        const newSongs = songs.filter(s => s.id !== id);
+        localStorage.setItem('vk_music_songs', JSON.stringify(newSongs));
+        this.notify();
+    } catch(e) {
+        console.error("Failed to delete song", e);
+    }
   }
 
   public loadSong(song: Song) {
       this.clearSession();
-      this.tracks = JSON.parse(JSON.stringify(song.tracks)); // Deep copy
+      try {
+          this.tracks = JSON.parse(JSON.stringify(song.tracks)); // Deep copy
+      } catch(e) {
+          console.error("Failed to load song tracks", e);
+          this.tracks = [];
+      }
       this.notify();
   }
 }

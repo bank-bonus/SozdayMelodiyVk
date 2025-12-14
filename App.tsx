@@ -26,10 +26,16 @@ const App: React.FC = () => {
       }).catch((e: any) => console.log('Ad error:', e));
     }
 
-    // Load unlocked items (mock persistence)
-    const stored = localStorage.getItem('vk_music_unlocked');
-    if (stored) {
-        setUnlockedItems(JSON.parse(stored));
+    // Load unlocked items (mock persistence) with error handling
+    try {
+        const stored = localStorage.getItem('vk_music_unlocked');
+        if (stored) {
+            setUnlockedItems(JSON.parse(stored));
+        }
+    } catch (e) {
+        console.error("Failed to parse unlocked items", e);
+        // If corrupted, reset
+        localStorage.removeItem('vk_music_unlocked');
     }
   }, []);
 
