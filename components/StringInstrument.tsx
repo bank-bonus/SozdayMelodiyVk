@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { audioEngine } from '../services/audioEngine';
 import { getNextNote } from '../constants';
@@ -5,7 +6,7 @@ import { StringConfig } from '../types';
 import { recorder } from '../services/recorder';
 
 interface Props {
-  type: 'guitar' | 'bass' | 'violin' | 'cello' | 'ukulele';
+  type: 'guitar' | 'bass' | 'violin' | 'cello' | 'ukulele' | 'harp';
   tuning: StringConfig[];
 }
 
@@ -27,6 +28,8 @@ const StringInstrument: React.FC<Props> = ({ type, tuning }) => {
       audioEngine.playCelloString(noteToPlay);
     } else if (type === 'ukulele') {
       audioEngine.playUkuleleString(noteToPlay);
+    } else if (type === 'harp') {
+      audioEngine.playHarpString(noteToPlay);
     }
     
     recorder.logEvent(type, noteToPlay, 'note');
@@ -43,6 +46,7 @@ const StringInstrument: React.FC<Props> = ({ type, tuning }) => {
           case 'violin': return 'Скрипка';
           case 'cello': return 'Виолончель';
           case 'ukulele': return 'Укулеле';
+          case 'harp': return 'Арфа';
           default: return '';
       }
   }
@@ -50,12 +54,8 @@ const StringInstrument: React.FC<Props> = ({ type, tuning }) => {
   const getBackground = () => {
     if (type === 'violin' || type === 'cello') return 'from-amber-900 via-amber-800 to-amber-950'; // Darker richer wood
     if (type === 'ukulele') return 'from-orange-100 via-orange-200 to-orange-100 opacity-80 mix-blend-multiply'; // Light wood
+    if (type === 'harp') return 'from-cyan-900 via-blue-900 to-slate-900'; // Magical vibe
     return 'from-neutral-900 via-neutral-800 to-neutral-900';
-  }
-
-  const getTextColor = () => {
-      if (type === 'ukulele') return 'text-slate-800';
-      return 'text-white';
   }
 
   return (
@@ -73,7 +73,7 @@ const StringInstrument: React.FC<Props> = ({ type, tuning }) => {
         {/* Frets (Vertical Lines) */}
         <div className="absolute inset-0 flex pointer-events-none pl-12 sm:pl-16">
           {[...Array(DISPLAY_FRETS)].map((_, i) => (
-             <div key={i} className={`flex-1 border-r-[3px] h-full shadow-[1px_0_2px_rgba(0,0,0,0.5)] flex items-end justify-center pb-2 ${type === 'violin' || type === 'cello' ? 'border-transparent' : 'border-neutral-500/30'}`}>
+             <div key={i} className={`flex-1 border-r-[3px] h-full shadow-[1px_0_2px_rgba(0,0,0,0.5)] flex items-end justify-center pb-2 ${type === 'violin' || type === 'cello' || type === 'harp' ? 'border-transparent' : 'border-neutral-500/30'}`}>
                 {/* Violin markers usually dots on side, but here we can show numbers for usability */}
                 <div className="w-4 h-4 rounded-full bg-black/40 flex items-center justify-center">
                     <span className="text-[10px] text-white/40 font-bold">{i + 1}</span>
@@ -92,7 +92,7 @@ const StringInstrument: React.FC<Props> = ({ type, tuning }) => {
                 {/* String visual */}
                 <div 
                     className={`absolute w-full top-1/2 -translate-y-1/2 shadow-sm transition-all duration-75
-                    ${type === 'bass' ? 'h-[3px] bg-slate-400' : type === 'violin' || type === 'cello' ? 'h-[1px] bg-amber-200' : type === 'ukulele' ? 'h-[2px] bg-white/80' : 'h-[1px] bg-amber-100/60'}
+                    ${type === 'bass' ? 'h-[3px] bg-slate-400' : type === 'violin' || type === 'cello' ? 'h-[1px] bg-amber-200' : type === 'ukulele' ? 'h-[2px] bg-white/80' : type === 'harp' ? 'h-[2px] bg-cyan-200 shadow-cyan-500/50' : 'h-[1px] bg-amber-100/60'}
                     ${isPlaying ? 'animate-pulse bg-white shadow-[0_0_8px_white]' : ''}
                     `}
                 />

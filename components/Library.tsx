@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { recorder } from '../services/recorder';
 import { Song } from '../types';
@@ -64,20 +65,6 @@ const Library: React.FC<Props> = ({ onLoad }) => {
       setConfirmAction(null);
   };
 
-  const handleShare = (e: React.MouseEvent, song: Song) => {
-      e.stopPropagation();
-      if (window.vkBridge) {
-          const message = `🎵 Я записал новый трек "${song.title}" в приложении "Создай Мелодию"! \n\nВ нем ${song.tracks.length} дорожек. Попробуй и ты создать свой хит! https://vk.com/app54060719`;
-          window.vkBridge.send('VKWebAppShowWallPostBox', {
-              message: message,
-              attachments: 'https://vk.com/app54060719'
-          }).catch((err: any) => console.log(err));
-      } else {
-          // No alert here, just log or ignore in dev
-          console.log('Шеринг доступен только ВКонтакте');
-      }
-  };
-
   const handlePreview = (e: React.MouseEvent, song: Song) => {
       e.stopPropagation();
       if (previewId === song.id) {
@@ -128,6 +115,13 @@ const Library: React.FC<Props> = ({ onLoad }) => {
             </button>
         )}
       </div>
+
+      {/* Instructions */}
+      {!isSelectionMode && songs.length > 0 && (
+          <div className="mb-6 p-4 bg-white/5 rounded-2xl border border-white/5 text-xs text-slate-400">
+              <p>💡 <b>Совет:</b> Чтобы добавить новую дорожку к сохраненному треку, нажмите на него, выберите "Загрузить", а затем запишите новый инструмент поверх старых.</p>
+          </div>
+      )}
 
       {/* Merge Action Bar */}
       {isSelectionMode && selectedIds.length > 1 && (
@@ -196,13 +190,7 @@ const Library: React.FC<Props> = ({ onLoad }) => {
 
                       {!isSelectionMode && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                             <button 
-                                onClick={(e) => handleShare(e, song)}
-                                className="p-3 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
-                                title="Поделиться"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                            </button>
+                            {/* Share button removed per request */}
                             <button 
                                 onClick={(e) => handleDeleteRequest(e, song)}
                                 className="p-3 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"

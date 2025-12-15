@@ -1,4 +1,5 @@
-import { DrumPadConfig, SoundType } from './types';
+
+import { DrumPadConfig, SoundType, ViewState } from './types';
 
 export const DRUM_PADS: DrumPadConfig[] = [
   { id: SoundType.CRASH, label: 'Крэш', color: 'bg-yellow-500', keyTrigger: 'Q' },
@@ -80,6 +81,27 @@ export const UKULELE_TUNING = [
   { note: 'E4', label: 'E' },
   { note: 'C4', label: 'C' },
   { note: 'G4', label: 'G' }
+];
+
+// New Instrument Tunings (Mocking as Strings or using for Synthesis reference)
+export const HARP_TUNING = [
+  { note: 'E5', label: 'E' },
+  { note: 'C5', label: 'C' },
+  { note: 'A4', label: 'A' },
+  { note: 'F4', label: 'F' },
+  { note: 'D4', label: 'D' }
+];
+
+export const PREMIUM_INSTRUMENTS = [
+  { id: ViewState.VIOLIN, icon: '🎻', name: 'Скрипка', price: 3, key: 'violin', color: 'from-yellow-600 to-amber-700', shadow: 'rgba(234,179,8,0.6)' },
+  { id: ViewState.CELLO, icon: '🎻', name: 'Виолончель', price: 3, key: 'cello', color: 'from-amber-800 to-orange-900', shadow: 'rgba(234,88,12,0.6)' },
+  { id: ViewState.FLUTE, icon: '🎼', name: 'Флейта', price: 2, key: 'flute', color: 'from-teal-500 to-emerald-600', shadow: 'rgba(20,184,166,0.6)' },
+  { id: ViewState.SAXOPHONE, icon: '🎷', name: 'Саксофон', price: 3, key: 'sax', color: 'from-amber-400 to-yellow-500', shadow: 'rgba(250,204,21,0.6)' },
+  { id: ViewState.UKULELE, icon: '🥥', name: 'Укулеле', price: 2, key: 'ukulele', color: 'from-lime-500 to-green-600', shadow: 'rgba(132,204,22,0.6)' },
+  { id: ViewState.EIGHT_BIT, icon: '👾', name: '8-Bit', price: 5, key: '8bit', color: 'from-pink-500 to-rose-500', shadow: 'rgba(244,63,94,0.6)' },
+  { id: ViewState.HARP, icon: '🧚‍♀️', name: 'Арфа', price: 5, key: 'harp', color: 'from-cyan-400 to-blue-500', shadow: 'rgba(6,182,212,0.6)' },
+  { id: ViewState.MARIMBA, icon: '🪵', name: 'Маримба', price: 3, key: 'marimba', color: 'from-orange-500 to-red-500', shadow: 'rgba(249,115,22,0.6)' },
+  { id: ViewState.KALIMBA, icon: '🥘', name: 'Калимба', price: 2, key: 'kalimba', color: 'from-indigo-400 to-violet-500', shadow: 'rgba(129,140,248,0.6)' },
 ];
 
 // Helper to calculate next semitone

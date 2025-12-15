@@ -1,3 +1,4 @@
+
 import { SoundType, InstrumentPreset, NoteEvent } from '../types';
 import { NOTE_FREQUENCIES } from '../constants';
 
@@ -57,6 +58,8 @@ class AudioEngine {
         this.playCelloString(event.note, playTime);
       } else if (event.instrument === 'ukulele') {
         this.playUkuleleString(event.note, playTime);
+      } else if (event.instrument === 'harp') {
+        this.playHarpString(event.note, playTime);
       } else {
         this.playPreset(event.instrument as InstrumentPreset, event.note, playTime);
       }
@@ -264,6 +267,15 @@ class AudioEngine {
       case 'ukulele':
         this.playUkuleleString(note, t);
         break;
+      case 'harp':
+        this.playHarpString(note, t);
+        break;
+      case 'marimba':
+        this.playMarimba(freq, t);
+        break;
+      case 'kalimba':
+        this.playKalimba(freq, t);
+        break;
       case 'flute':
         this.playFlute(freq, t);
         break;
@@ -428,6 +440,46 @@ class AudioEngine {
     this.scheduledNodes.push(osc, noise);
   }
 
+  private playMarimba(freq: number, t: number) {
+      if (!this.ctx || !this.masterGain) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      // Woody, percussive hit
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.8, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(t);
+      osc.stop(t + 0.4);
+      this.scheduledNodes.push(osc);
+  }
+
+  private playKalimba(freq: number, t: number) {
+      if (!this.ctx || !this.masterGain) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      // Clean, bell-like, slightly longer sustain
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.6, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+      
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(t);
+      osc.stop(t + 1.5);
+      this.scheduledNodes.push(osc);
+  }
+
   public playNote(note: string, waveType: string) {
       this.playPreset(waveType as InstrumentPreset, note);
   }
@@ -462,6 +514,31 @@ class AudioEngine {
     osc.start(t);
     osc.stop(t + 1.5);
     this.scheduledNodes.push(osc);
+  }
+
+  public playHarpString(note: string, time?: number) {
+      this.init();
+      if (!this.ctx || !this.masterGain) return;
+      const freq = NOTE_FREQUENCIES[note];
+      if (!freq) return;
+
+      const t = time || this.ctx.currentTime;
+      
+      // Harp: Triangle, gentle pluck
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.5, t + 0.05); // Softer attack than guitar
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0); // Long dreamy decay
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(t);
+      osc.stop(t + 2.0);
+      this.scheduledNodes.push(osc);
   }
 
   public playBassString(note: string, time?: number) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DrumPad from './components/DrumPad';
 import SynthKeys from './components/SynthKeys';
@@ -7,7 +8,7 @@ import Library from './components/Library';
 import { ViewState } from './types';
 import { audioEngine } from './services/audioEngine';
 import { recorder } from './services/recorder';
-import { GUITAR_TUNING, BASS_TUNING, VIOLIN_TUNING, CELLO_TUNING, UKULELE_TUNING } from './constants';
+import { GUITAR_TUNING, BASS_TUNING, VIOLIN_TUNING, CELLO_TUNING, UKULELE_TUNING, HARP_TUNING, PREMIUM_INSTRUMENTS } from './constants';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.MENU);
@@ -51,22 +52,13 @@ const App: React.FC = () => {
   };
 
   const handleNav = (target: ViewState) => {
-    // Check locked status - DISABLED FOR NOW per user request (Unlocked mode)
-    /* 
-    if (target === ViewState.VIOLIN && !unlockedItems.includes('violin')) {
-        handleBuy('violin', 'Скрипка');
+    // Check if target is a premium instrument
+    const premiumItem = PREMIUM_INSTRUMENTS.find(item => item.id === target);
+    
+    if (premiumItem && !unlockedItems.includes(premiumItem.key)) {
+        handleBuy(premiumItem.key, premiumItem.name);
         return;
     }
-    if (target === ViewState.FLUTE && !unlockedItems.includes('flute')) {
-        handleBuy('flute', 'Флейта');
-        return;
-    }
-    if (target === ViewState.CELLO && !unlockedItems.includes('cello')) {
-        handleBuy('cello', 'Виолончель');
-        return;
-    }
-    // ... others ...
-    */
 
     // Initialize audio context on first user interaction
     audioEngine.init();
@@ -79,14 +71,18 @@ const App: React.FC = () => {
               type: 'item', 
               item: itemId 
           })
-          .then(() => {
-              // Success
-              unlockItem(itemId);
+          .then((data: any) => {
+              if (data.success) {
+                unlockItem(itemId);
+              } else {
+                showToast("Оплата не прошла", "error");
+              }
           })
           .catch(() => {
-              // For demo purposes or if user cancels/fails payment
-              // In production, you would handle the error gracefully without a confirm dialog
-              showToast("Покупка отменена или не удалась", "error");
+              // In development or if user cancels
+              showToast("Покупка отменена", "error");
+              // Uncomment below line to test purchases in dev mode without paying
+              // unlockItem(itemId); 
           });
       } else {
           // Fallback for browser testing (Dev mode)
@@ -101,12 +97,11 @@ const App: React.FC = () => {
       setUnlockedItems(newUnlocked);
       localStorage.setItem('vk_music_unlocked', JSON.stringify(newUnlocked));
       showToast('Инструмент разблокирован!', 'success');
-      if (itemId === 'violin') setView(ViewState.VIOLIN);
-      if (itemId === 'flute') setView(ViewState.FLUTE);
-      if (itemId === 'cello') setView(ViewState.CELLO);
-      if (itemId === 'ukulele') setView(ViewState.UKULELE);
-      if (itemId === 'sax') setView(ViewState.SAXOPHONE);
-      if (itemId === '8bit') setView(ViewState.EIGHT_BIT);
+      
+      const targetView = PREMIUM_INSTRUMENTS.find(i => i.key === itemId)?.id;
+      if (targetView) {
+          setView(targetView);
+      }
   };
 
   const handleSave = () => {
@@ -165,10 +160,16 @@ const App: React.FC = () => {
         return <StringInstrument type="cello" tuning={CELLO_TUNING} />;
       case ViewState.UKULELE:
         return <StringInstrument type="ukulele" tuning={UKULELE_TUNING} />;
+      case ViewState.HARP:
+        return <StringInstrument type="harp" tuning={HARP_TUNING} />;
       case ViewState.FLUTE:
         return <SynthKeys title="ФЛЕЙТА" forcedPreset="flute" hidePresets={true} />;
       case ViewState.SAXOPHONE:
         return <SynthKeys title="САКСОФОН" forcedPreset="sax" hidePresets={true} />;
+      case ViewState.MARIMBA:
+        return <SynthKeys title="МАРИМБА" forcedPreset="marimba" hidePresets={true} />;
+      case ViewState.KALIMBA:
+        return <SynthKeys title="КАЛИМБА" forcedPreset="kalimba" hidePresets={true} />;
       case ViewState.EIGHT_BIT:
         return <SynthKeys title="8-BIT КОНСОЛЬ" forcedPreset="8bit" hidePresets={true} />;
       case ViewState.LIBRARY:
@@ -177,7 +178,7 @@ const App: React.FC = () => {
       default:
         return (
           <div className="grid grid-cols-1 gap-6 w-full max-w-sm px-4 perspective-1000">
-            {/* Existing Instruments */}
+            {/* Standard Free Instruments */}
             <button
               onClick={() => handleNav(ViewState.DRUMS)}
               className="group relative p-6 rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]"
@@ -242,35 +243,45 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
                 {/* Premium Instruments */}
-                {[
-                  { id: ViewState.VIOLIN, icon: '🎻', name: 'Скрипка', color: 'from-yellow-600 to-amber-700', shadow: 'rgba(234,179,8,0.6)', key: 'violin' },
-                  { id: ViewState.CELLO, icon: '🎻', name: 'Виолончель', color: 'from-amber-800 to-orange-900', shadow: 'rgba(234,88,12,0.6)', key: 'cello' },
-                  { id: ViewState.FLUTE, icon: '🎼', name: 'Флейта', color: 'from-teal-500 to-emerald-600', shadow: 'rgba(20,184,166,0.6)', key: 'flute' },
-                  { id: ViewState.SAXOPHONE, icon: '🎷', name: 'Саксофон', color: 'from-amber-400 to-yellow-500', shadow: 'rgba(250,204,21,0.6)', key: 'sax' },
-                  { id: ViewState.UKULELE, icon: '🥥', name: 'Укулеле', color: 'from-lime-500 to-green-600', shadow: 'rgba(132,204,22,0.6)', key: 'ukulele' },
-                  { id: ViewState.EIGHT_BIT, icon: '👾', name: '8-Bit', color: 'from-pink-500 to-rose-500', shadow: 'rgba(244,63,94,0.6)', key: '8bit' },
-                ].map(inst => (
-                    <button
-                        key={inst.id}
-                        onClick={() => handleNav(inst.id)}
-                        className={`group relative p-4 rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:shadow-[0_0_20px_-5px_${inst.shadow}] h-36 flex flex-col justify-between`}
-                    >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${inst.color} opacity-90 group-hover:opacity-100 transition-opacity`} />
-                        <div className="relative flex justify-between items-start">
-                             <div className="text-3xl drop-shadow-md">{inst.icon}</div>
-                             {/* Always show checkmark for now as per "unlocked" request, or show lock if strictly following logic but bypassing. Let's show check to indicate availability */}
-                             <div className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center border border-white/20">
-                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
-                             </div>
-                        </div>
-                        <div className="relative text-left">
-                            <div className="text-lg font-black text-white tracking-tight drop-shadow-md leading-none">{inst.name}</div>
-                            <div className="text-white/80 font-medium text-[10px] mt-1 flex items-center gap-1">
-                                Бесплатно
+                {PREMIUM_INSTRUMENTS.map(inst => {
+                    const isUnlocked = unlockedItems.includes(inst.key);
+                    return (
+                        <button
+                            key={inst.id}
+                            onClick={() => handleNav(inst.id)}
+                            className={`group relative p-4 rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:shadow-[0_0_20px_-5px_${inst.shadow}] h-36 flex flex-col justify-between`}
+                        >
+                            <div className={`absolute inset-0 bg-gradient-to-br ${inst.color} opacity-90 group-hover:opacity-100 transition-opacity`} />
+                            
+                            {/* Lock Overlay */}
+                            {!isUnlocked && (
+                                <div className="absolute inset-0 bg-black/40 z-10 flex flex-col items-center justify-center backdrop-blur-[1px]">
+                                    <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center mb-1">
+                                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    </div>
+                                    <div className="px-2 py-0.5 rounded bg-yellow-400/90 text-yellow-900 font-bold text-xs shadow-lg">
+                                        {inst.price} голоса
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="relative flex justify-between items-start">
+                                 <div className="text-3xl drop-shadow-md">{inst.icon}</div>
+                                 {isUnlocked && (
+                                    <div className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center border border-white/20">
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+                                    </div>
+                                 )}
                             </div>
-                        </div>
-                    </button>
-                ))}
+                            <div className="relative text-left">
+                                <div className="text-lg font-black text-white tracking-tight drop-shadow-md leading-none">{inst.name}</div>
+                                <div className="text-white/80 font-medium text-[10px] mt-1 flex items-center gap-1">
+                                    {isUnlocked ? 'Приобретено' : 'Купить'}
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })}
             </div>
 
             <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent my-4" />
