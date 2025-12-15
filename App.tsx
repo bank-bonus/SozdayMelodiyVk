@@ -22,6 +22,20 @@ const App: React.FC = () => {
     // Initialize VK Bridge
     if (window.vkBridge) {
       window.vkBridge.send('VKWebAppInit');
+      
+      // Show Banner Ad at bottom
+      window.vkBridge.send('VKWebAppShowBannerAd', {
+        banner_location: 'bottom'
+      })
+      .then((data: any) => { 
+        if (data.result) {
+          // Banner displayed
+          console.log('Banner displayed');
+        }
+      })
+      .catch((e: any) => {
+        console.log('Banner Ad Error:', e); 
+      });
     }
 
     // Load unlocked items (mock persistence) with error handling
