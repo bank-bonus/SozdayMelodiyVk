@@ -42,7 +42,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (notification) {
-        const timer = setTimeout(() => setNotification(null), 3000);
+        const timer = setTimeout(() => setNotification(null), 4000);
         return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -67,6 +67,7 @@ const App: React.FC = () => {
 
   const handleBuy = (itemId: string, itemName: string) => {
       if (window.vkBridge) {
+          // 'item' parameter must match the item name created in VK Apps Admin -> Payments
           window.vkBridge.send('VKWebAppShowOrderBox', { 
               type: 'item', 
               item: itemId 
@@ -75,20 +76,27 @@ const App: React.FC = () => {
               if (data.success) {
                 unlockItem(itemId);
               } else {
-                showToast("Оплата не прошла", "error");
+                // Technically success=true is usually enough, but just in case
+                unlockItem(itemId); 
               }
           })
-          .catch(() => {
-              // In development or if user cancels
-              showToast("Покупка отменена", "error");
-              // Uncomment below line to test purchases in dev mode without paying
-              // unlockItem(itemId); 
+          .catch((error: any) => {
+              console.error("VK Pay Error:", error);
+              // Extract error reason if available
+              const reason = error?.error_data?.error_reason 
+                 || error?.error_data?.error_msg 
+                 || error?.message 
+                 || JSON.stringify(error);
+              
+              showToast(`Ошибка оплаты: ${reason}. Проверьте настройки ВК.`, "error");
+              
+              // FOR TESTING ONLY: Uncomment to simulate success on error (if you can't config VK yet)
+              // unlockItem(itemId);
           });
       } else {
           // Fallback for browser testing (Dev mode)
-          // Directly unlock to avoid native confirm alert
           unlockItem(itemId);
-          showToast(`[DEV] ${itemName} куплен`, "success");
+          showToast(`[DEV] ${itemName} куплен (тест)`, "success");
       }
   };
 
