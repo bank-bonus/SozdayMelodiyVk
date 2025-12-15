@@ -5,6 +5,7 @@ import SynthKeys from './components/SynthKeys';
 import StringInstrument from './components/StringInstrument';
 import StudioControls from './components/StudioControls';
 import Library from './components/Library';
+import Shop from './components/Shop';
 import { ViewState } from './types';
 import { audioEngine } from './services/audioEngine';
 import { recorder } from './services/recorder';
@@ -21,10 +22,6 @@ const App: React.FC = () => {
     // Initialize VK Bridge
     if (window.vkBridge) {
       window.vkBridge.send('VKWebAppInit');
-      // Show Banner Ad
-      window.vkBridge.send('VKWebAppShowBannerAd', {
-        banner_location: 'bottom'
-      }).catch((e: any) => console.log('Ad error:', e));
     }
 
     // Load unlocked items (mock persistence) with error handling
@@ -52,51 +49,39 @@ const App: React.FC = () => {
   };
 
   const handleNav = (target: ViewState) => {
-    // Check if target is a premium instrument
-    const premiumItem = PREMIUM_INSTRUMENTS.find(item => item.id === target);
-    
-    if (premiumItem && !unlockedItems.includes(premiumItem.key)) {
-        handleBuy(premiumItem.key, premiumItem.name);
-        return;
-    }
-
     // Initialize audio context on first user interaction
     audioEngine.init();
     setView(target);
   };
 
-  const handleBuy = (itemId: string, itemName: string) => {
+  const handleAdUnlock = (itemId: string, itemName: string) => {
       if (window.vkBridge) {
-          // 'item' parameter must match the item name created in VK Apps Admin -> Payments
-          window.vkBridge.send('VKWebAppShowOrderBox', { 
-              type: 'item', 
-              item: itemId 
-          })
+          // Use Native Ads with reward format
+          window.vkBridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' })
           .then((data: any) => {
-              if (data.success) {
-                unlockItem(itemId);
+              if (data.result) {
+                  // User watched the ad
+                  unlockItem(itemId);
               } else {
-                // Technically success=true is usually enough, but just in case
-                unlockItem(itemId); 
+                  showToast("Просмотр рекламы не завершен", "error");
               }
           })
           .catch((error: any) => {
-              console.error("VK Pay Error:", error);
-              // Extract error reason if available
-              const reason = error?.error_data?.error_reason 
-                 || error?.error_data?.error_msg 
-                 || error?.message 
-                 || JSON.stringify(error);
+              console.error("Ad Error:", error);
+              // Fallback or dev handling
+              if (error?.error_data?.error_code === 404 || error?.error_type === 'client_error') {
+                 showToast("Реклама сейчас недоступна. Попробуйте позже.", "error");
+              } else {
+                 showToast("Ошибка загрузки рекламы", "error");
+              }
               
-              showToast(`Ошибка оплаты: ${reason}. Проверьте настройки ВК.`, "error");
-              
-              // FOR TESTING ONLY: Uncomment to simulate success on error (if you can't config VK yet)
+              // DEV MODE: Uncomment to allow unlock without ad if ad fails (for testing)
               // unlockItem(itemId);
           });
       } else {
           // Fallback for browser testing (Dev mode)
           unlockItem(itemId);
-          showToast(`[DEV] ${itemName} куплен (тест)`, "success");
+          showToast(`[DEV] ${itemName} разблокирован (тест)`, "success");
       }
   };
 
@@ -105,11 +90,6 @@ const App: React.FC = () => {
       setUnlockedItems(newUnlocked);
       localStorage.setItem('vk_music_unlocked', JSON.stringify(newUnlocked));
       showToast('Инструмент разблокирован!', 'success');
-      
-      const targetView = PREMIUM_INSTRUMENTS.find(i => i.key === itemId)?.id;
-      if (targetView) {
-          setView(targetView);
-      }
   };
 
   const handleSave = () => {
@@ -182,11 +162,22 @@ const App: React.FC = () => {
         return <SynthKeys title="8-BIT КОНСОЛЬ" forcedPreset="8bit" hidePresets={true} />;
       case ViewState.LIBRARY:
         return <Library onLoad={() => setView(ViewState.MENU)} />;
+      case ViewState.SHOP:
+        return (
+            <Shop 
+                unlockedItems={unlockedItems}
+                onSelect={handleNav}
+                onUnlock={handleAdUnlock}
+                onBack={() => setView(ViewState.MENU)}
+            />
+        );
       case ViewState.MENU:
       default:
         return (
-          <div className="grid grid-cols-1 gap-6 w-full max-w-sm px-4 perspective-1000">
-            {/* Standard Free Instruments */}
+          <div className="grid grid-cols-1 gap-5 w-full max-w-sm px-4 perspective-1000 mt-6">
+            
+            {/* --- Free Instruments --- */}
+            
             <button
               onClick={() => handleNav(ViewState.DRUMS)}
               className="group relative p-6 rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]"
@@ -246,58 +237,32 @@ const App: React.FC = () => {
               </div>
             </button>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent my-2" />
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center mb-1">Магазин Инструментов</div>
+            <div className="h-px bg-white/10 my-1" />
 
-            <div className="grid grid-cols-2 gap-4">
-                {/* Premium Instruments */}
-                {PREMIUM_INSTRUMENTS.map(inst => {
-                    const isUnlocked = unlockedItems.includes(inst.key);
-                    return (
-                        <button
-                            key={inst.id}
-                            onClick={() => handleNav(inst.id)}
-                            className={`group relative p-4 rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:shadow-[0_0_20px_-5px_${inst.shadow}] h-36 flex flex-col justify-between`}
-                        >
-                            <div className={`absolute inset-0 bg-gradient-to-br ${inst.color} opacity-90 group-hover:opacity-100 transition-opacity`} />
-                            
-                            {/* Lock Overlay */}
-                            {!isUnlocked && (
-                                <div className="absolute inset-0 bg-black/40 z-10 flex flex-col items-center justify-center backdrop-blur-[1px]">
-                                    <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center mb-1">
-                                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                    </div>
-                                    <div className="px-2 py-0.5 rounded bg-yellow-400/90 text-yellow-900 font-bold text-xs shadow-lg">
-                                        {inst.price} голоса
-                                    </div>
-                                </div>
-                            )}
+            {/* --- Shop Button --- */}
 
-                            <div className="relative flex justify-between items-start">
-                                 <div className="text-3xl drop-shadow-md">{inst.icon}</div>
-                                 {isUnlocked && (
-                                    <div className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center border border-white/20">
-                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
-                                    </div>
-                                 )}
-                            </div>
-                            <div className="relative text-left">
-                                <div className="text-lg font-black text-white tracking-tight drop-shadow-md leading-none">{inst.name}</div>
-                                <div className="text-white/80 font-medium text-[10px] mt-1 flex items-center gap-1">
-                                    {isUnlocked ? 'Приобретено' : 'Купить'}
-                                </div>
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
+            <button
+                onClick={() => handleNav(ViewState.SHOP)}
+                className="group relative p-4 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] bg-slate-800/80 border border-white/10 flex items-center justify-between"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-xl shadow-lg">
+                        🛍️
+                    </div>
+                    <div className="text-left">
+                        <div className="text-lg font-bold text-white">Магазин Инструментов</div>
+                        <div className="text-slate-400 text-xs">Все инструменты и звуки</div>
+                    </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-slate-400">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                </div>
+            </button>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent my-4" />
-
-            <div className="flex gap-4">
+            <div className="grid grid-cols-2 gap-4 mt-2">
               <button
                 onClick={() => handleNav(ViewState.LIBRARY)}
-                className="flex-1 glass-panel p-4 rounded-2xl hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-200 font-bold border border-white/10 shadow-lg group"
+                className="glass-panel p-4 rounded-2xl hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-200 font-bold border border-white/10 shadow-lg group"
               >
                  <span className="text-2xl group-hover:scale-110 transition-transform">📂</span> 
                  <span className="text-sm">Библиотека</span>
@@ -305,7 +270,7 @@ const App: React.FC = () => {
               
               <button
                 onClick={handleInvite}
-                className="flex-1 glass-panel p-4 rounded-2xl hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-200 font-bold border border-white/10 shadow-lg group"
+                className="glass-panel p-4 rounded-2xl hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-200 font-bold border border-white/10 shadow-lg group"
               >
                  <span className="text-2xl group-hover:scale-110 transition-transform">👥</span> 
                  <span className="text-sm">Пригласить</span>

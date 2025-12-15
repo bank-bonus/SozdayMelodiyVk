@@ -1,6 +1,7 @@
 
 export enum ViewState {
   MENU = 'MENU',
+  SHOP = 'SHOP',
   DRUMS = 'DRUMS',
   SYNTH = 'SYNTH',
   GUITAR = 'GUITAR',
@@ -70,6 +71,17 @@ export interface SongIdea {
   genre: string;
   chords: string[];
   lyrics: string;
+}
+
+export interface InstrumentDef {
+  id: ViewState;
+  name: string;
+  icon: string;
+  description: string;
+  color: string;
+  shadow: string;
+  isPremium: boolean;
+  key?: string; // For localStorage unlocking
 }
 
 declare global {

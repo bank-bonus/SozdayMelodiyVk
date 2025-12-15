@@ -1,5 +1,5 @@
 
-import { DrumPadConfig, SoundType, ViewState } from './types';
+import { DrumPadConfig, SoundType, ViewState, InstrumentDef } from './types';
 
 export const DRUM_PADS: DrumPadConfig[] = [
   { id: SoundType.CRASH, label: 'Крэш', color: 'bg-yellow-500', keyTrigger: 'Q' },
@@ -92,17 +92,26 @@ export const HARP_TUNING = [
   { note: 'D4', label: 'D' }
 ];
 
-export const PREMIUM_INSTRUMENTS = [
-  { id: ViewState.VIOLIN, icon: '🎻', name: 'Скрипка', price: 3, key: 'violin', color: 'from-yellow-600 to-amber-700', shadow: 'rgba(234,179,8,0.6)' },
-  { id: ViewState.CELLO, icon: '🎻', name: 'Виолончель', price: 3, key: 'cello', color: 'from-amber-800 to-orange-900', shadow: 'rgba(234,88,12,0.6)' },
-  { id: ViewState.FLUTE, icon: '🎼', name: 'Флейта', price: 2, key: 'flute', color: 'from-teal-500 to-emerald-600', shadow: 'rgba(20,184,166,0.6)' },
-  { id: ViewState.SAXOPHONE, icon: '🎷', name: 'Саксофон', price: 3, key: 'sax', color: 'from-amber-400 to-yellow-500', shadow: 'rgba(250,204,21,0.6)' },
-  { id: ViewState.UKULELE, icon: '🥥', name: 'Укулеле', price: 2, key: 'ukulele', color: 'from-lime-500 to-green-600', shadow: 'rgba(132,204,22,0.6)' },
-  { id: ViewState.EIGHT_BIT, icon: '👾', name: '8-Bit', price: 5, key: '8bit', color: 'from-pink-500 to-rose-500', shadow: 'rgba(244,63,94,0.6)' },
-  { id: ViewState.HARP, icon: '🧚‍♀️', name: 'Арфа', price: 5, key: 'harp', color: 'from-cyan-400 to-blue-500', shadow: 'rgba(6,182,212,0.6)' },
-  { id: ViewState.MARIMBA, icon: '🪵', name: 'Маримба', price: 3, key: 'marimba', color: 'from-orange-500 to-red-500', shadow: 'rgba(249,115,22,0.6)' },
-  { id: ViewState.KALIMBA, icon: '🥘', name: 'Калимба', price: 2, key: 'kalimba', color: 'from-indigo-400 to-violet-500', shadow: 'rgba(129,140,248,0.6)' },
+export const INSTRUMENTS_CATALOG: InstrumentDef[] = [
+    // Standard Free
+    { id: ViewState.DRUMS, icon: '🥁', name: 'Барабаны', description: 'Биты и ритмы', isPremium: false, color: 'from-rose-500 to-orange-600', shadow: 'rgba(244,63,94,0.6)' },
+    { id: ViewState.SYNTH, icon: '🎹', name: 'Синтезатор', description: 'Пианино, Пад, FX', isPremium: false, color: 'from-violet-600 to-indigo-600', shadow: 'rgba(99,102,241,0.6)' },
+    { id: ViewState.GUITAR, icon: '🎸', name: 'Гитара', description: 'Акустика и Соло', isPremium: false, color: 'from-amber-500 to-orange-600', shadow: 'rgba(245,158,11,0.6)' },
+    { id: ViewState.BASS, icon: '🎸', name: 'Бас-гитара', description: 'Грув и Бас', isPremium: false, color: 'from-fuchsia-700 to-purple-800', shadow: 'rgba(168,85,247,0.6)' },
+    
+    // Premium (Ad Locked)
+    { id: ViewState.VIOLIN, icon: '🎻', name: 'Скрипка', description: 'Смычковый', isPremium: true, key: 'violin', color: 'from-yellow-600 to-amber-700', shadow: 'rgba(234,179,8,0.6)' },
+    { id: ViewState.CELLO, icon: '🎻', name: 'Виолончель', description: 'Глубокий звук', isPremium: true, key: 'cello', color: 'from-amber-800 to-orange-900', shadow: 'rgba(234,88,12,0.6)' },
+    { id: ViewState.FLUTE, icon: '🎼', name: 'Флейта', description: 'Духовой', isPremium: true, key: 'flute', color: 'from-teal-500 to-emerald-600', shadow: 'rgba(20,184,166,0.6)' },
+    { id: ViewState.SAXOPHONE, icon: '🎷', name: 'Саксофон', description: 'Джаз и Блюз', isPremium: true, key: 'sax', color: 'from-amber-400 to-yellow-500', shadow: 'rgba(250,204,21,0.6)' },
+    { id: ViewState.UKULELE, icon: '🥥', name: 'Укулеле', description: 'Гавайи', isPremium: true, key: 'ukulele', color: 'from-lime-500 to-green-600', shadow: 'rgba(132,204,22,0.6)' },
+    { id: ViewState.EIGHT_BIT, icon: '👾', name: '8-Bit', description: 'Ретро игры', isPremium: true, key: '8bit', color: 'from-pink-500 to-rose-500', shadow: 'rgba(244,63,94,0.6)' },
+    { id: ViewState.HARP, icon: '🧚‍♀️', name: 'Арфа', description: 'Магия', isPremium: true, key: 'harp', color: 'from-cyan-400 to-blue-500', shadow: 'rgba(6,182,212,0.6)' },
+    { id: ViewState.MARIMBA, icon: '🪵', name: 'Маримба', description: 'Перкуссия', isPremium: true, key: 'marimba', color: 'from-orange-500 to-red-500', shadow: 'rgba(249,115,22,0.6)' },
+    { id: ViewState.KALIMBA, icon: '🥘', name: 'Калимба', description: 'Этника', isPremium: true, key: 'kalimba', color: 'from-indigo-400 to-violet-500', shadow: 'rgba(129,140,248,0.6)' },
 ];
+
+export const PREMIUM_INSTRUMENTS = INSTRUMENTS_CATALOG.filter(i => i.isPremium);
 
 // Helper to calculate next semitone
 const NOTES_ORDER = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
