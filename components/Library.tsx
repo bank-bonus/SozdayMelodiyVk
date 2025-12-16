@@ -23,11 +23,14 @@ const Library: React.FC<Props> = ({ onLoad }) => {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const refreshSongs = () => {
-    setSongs(recorder.getSavedSongs());
+    setSongs([...recorder.getSavedSongs()]); // Spread to ensure new ref triggers render
   };
 
   useEffect(() => {
     refreshSongs();
+    // Subscribe to recorder updates (e.g. when storage loads)
+    const unsubscribe = recorder.subscribe(refreshSongs);
+    return () => unsubscribe();
   }, []);
 
   const handleLoadRequest = (song: Song) => {
@@ -60,7 +63,7 @@ const Library: React.FC<Props> = ({ onLoad }) => {
   const confirmDelete = () => {
       if (confirmAction?.song) {
           recorder.deleteSong(confirmAction.song.id);
-          refreshSongs();
+          // refreshSongs called via subscription in recorder
       }
       setConfirmAction(null);
   };
@@ -90,7 +93,7 @@ const Library: React.FC<Props> = ({ onLoad }) => {
       const songsToMerge = songs.filter(s => selectedIds.includes(s.id));
       if (songsToMerge.length > 0 && title) {
           recorder.mergeSongs(songsToMerge, title);
-          refreshSongs();
+          // refreshSongs called via subscription
           setSelectedIds([]);
           setIsSelectionMode(false);
       }

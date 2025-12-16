@@ -1,3 +1,4 @@
+
 import { NoteEvent, Song, Track } from '../types';
 import { audioEngine } from './audioEngine';
 
@@ -8,11 +9,59 @@ class RecorderService {
   private currentTrackEvents: NoteEvent[] = [];
   private tracks: Track[] = [];
   
+  // In-memory cache of saved songs
+  private savedSongs: Song[] = [];
+  
   // Quick listeners for UI updates
   private listeners: (() => void)[] = [];
 
   constructor() {
-    // Load from local storage if needed, but for now we start fresh
+    // Initialization is now explicit via init() called from App.tsx
+  }
+
+  public async init() {
+      // Try to load from VK Storage first
+      if (window.vkBridge) {
+          try {
+              const data = await window.vkBridge.send('VKWebAppStorageGet', { keys: ['vk_music_songs'] });
+              const value = data.keys.find((k: any) => k.key === 'vk_music_songs')?.value;
+              if (value) {
+                  this.savedSongs = JSON.parse(value);
+                  this.notify();
+                  return; 
+              }
+          } catch (e) {
+              console.error("VK Storage Init Error (Songs):", e);
+          }
+      }
+
+      // Fallback to localStorage if VK Storage failed or is empty (and we are in dev/offline)
+      try {
+          const existing = localStorage.getItem('vk_music_songs');
+          if (existing) {
+              this.savedSongs = JSON.parse(existing);
+              this.notify();
+          }
+      } catch (e) {
+          console.error("Local Storage Init Error:", e);
+      }
+  }
+
+  private syncStorage() {
+      const json = JSON.stringify(this.savedSongs);
+      
+      // Sync to VK Cloud
+      if (window.vkBridge) {
+          window.vkBridge.send('VKWebAppStorageSet', {
+              key: 'vk_music_songs',
+              value: json
+          }).catch((e: any) => console.error("Failed to sync songs to VK", e));
+      }
+
+      // Sync to LocalStorage (backup/dev)
+      try {
+        localStorage.setItem('vk_music_songs', json);
+      } catch (e) {}
   }
 
   public subscribe(callback: () => void) {
@@ -144,9 +193,9 @@ class RecorderService {
       tracks: this.tracks
     };
     
-    const existing = this.getSavedSongs();
-    existing.push(song);
-    localStorage.setItem('vk_music_songs', JSON.stringify(existing));
+    this.savedSongs.push(song);
+    this.syncStorage();
+    this.notify();
     return song;
   }
 
@@ -170,33 +219,20 @@ class RecorderService {
         tracks: allTracks
     };
 
-    const existing = this.getSavedSongs();
-    existing.push(newSong);
-    localStorage.setItem('vk_music_songs', JSON.stringify(existing));
+    this.savedSongs.push(newSong);
+    this.syncStorage();
+    this.notify();
     return newSong;
   }
 
   public getSavedSongs(): Song[] {
-    try {
-        const existing = localStorage.getItem('vk_music_songs');
-        return existing ? JSON.parse(existing) : [];
-    } catch(e) {
-        console.error("Failed to parse saved songs", e);
-        return [];
-    }
+    return this.savedSongs;
   }
 
   public deleteSong(id: string) {
-    const existing = localStorage.getItem('vk_music_songs');
-    if (!existing) return;
-    try {
-        const songs: Song[] = JSON.parse(existing);
-        const newSongs = songs.filter(s => s.id !== id);
-        localStorage.setItem('vk_music_songs', JSON.stringify(newSongs));
-        this.notify();
-    } catch(e) {
-        console.error("Failed to delete song", e);
-    }
+    this.savedSongs = this.savedSongs.filter(s => s.id !== id);
+    this.syncStorage();
+    this.notify();
   }
 
   public loadSong(song: Song) {

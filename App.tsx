@@ -19,35 +19,45 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   useEffect(() => {
-    // Initialize VK Bridge
+    // Initialize VK Bridge and Data
     if (window.vkBridge) {
       window.vkBridge.send('VKWebAppInit');
       
-      // Show Banner Ad at bottom
+      // 1. Show Banner Ad
       window.vkBridge.send('VKWebAppShowBannerAd', {
         banner_location: 'bottom'
-      })
-      .then((data: any) => { 
-        if (data.result) {
-          // Banner displayed
-          console.log('Banner displayed');
-        }
-      })
-      .catch((e: any) => {
-        console.log('Banner Ad Error:', e); 
-      });
-    }
+      }).catch((e: any) => console.log('Banner Ad Error:', e));
 
-    // Load unlocked items (mock persistence) with error handling
-    try {
-        const stored = localStorage.getItem('vk_music_unlocked');
-        if (stored) {
-            setUnlockedItems(JSON.parse(stored));
+      // 2. Load Unlocked Items from Cloud Storage
+      window.vkBridge.send('VKWebAppStorageGet', { 
+        keys: ['vk_music_unlocked'] 
+      }).then((data: any) => {
+        if (data.keys) {
+            const value = data.keys.find((k: any) => k.key === 'vk_music_unlocked')?.value;
+            if (value) {
+                try {
+                    setUnlockedItems(JSON.parse(value));
+                } catch(e) { console.error("Parse error unlocked", e); }
+            } else {
+                // Fallback to local if cloud is empty (first sync or offline)
+                 const local = localStorage.getItem('vk_music_unlocked');
+                 if (local) setUnlockedItems(JSON.parse(local));
+            }
         }
-    } catch (e) {
-        console.error("Failed to parse unlocked items", e);
-        // If corrupted, reset
-        localStorage.removeItem('vk_music_unlocked');
+      }).catch((e: any) => {
+          console.error("VK Storage Get Error", e);
+          // Fallback
+          const local = localStorage.getItem('vk_music_unlocked');
+          if (local) setUnlockedItems(JSON.parse(local));
+      });
+
+      // 3. Initialize Recorder (Loads Songs from Cloud)
+      recorder.init();
+    } else {
+        // Browser Dev Mode Fallback
+        const local = localStorage.getItem('vk_music_unlocked');
+        if (local) setUnlockedItems(JSON.parse(local));
+        recorder.init();
     }
   }, []);
 
@@ -88,9 +98,6 @@ const App: React.FC = () => {
               } else {
                  showToast("Ошибка загрузки рекламы", "error");
               }
-              
-              // DEV MODE: Uncomment to allow unlock without ad if ad fails (for testing)
-              // unlockItem(itemId);
           });
       } else {
           // Fallback for browser testing (Dev mode)
@@ -102,7 +109,20 @@ const App: React.FC = () => {
   const unlockItem = (itemId: string) => {
       const newUnlocked = [...unlockedItems, itemId];
       setUnlockedItems(newUnlocked);
-      localStorage.setItem('vk_music_unlocked', JSON.stringify(newUnlocked));
+      
+      const jsonValue = JSON.stringify(newUnlocked);
+      
+      // Save to VK Cloud Storage
+      if (window.vkBridge) {
+          window.vkBridge.send('VKWebAppStorageSet', {
+              key: 'vk_music_unlocked',
+              value: jsonValue
+          }).catch((e: any) => console.error("Storage Set Error", e));
+      }
+      
+      // Save to LocalStorage (Backup)
+      localStorage.setItem('vk_music_unlocked', jsonValue);
+      
       showToast('Инструмент разблокирован!', 'success');
   };
 
